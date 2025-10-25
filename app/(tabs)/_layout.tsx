@@ -16,6 +16,7 @@ export default function TabLayout() {
         headerShown: false,
         tabBarButton: HapticTab,
       }}
+      initialRouteName="timer"
     >
       <Tabs.Screen
         name="timer"
