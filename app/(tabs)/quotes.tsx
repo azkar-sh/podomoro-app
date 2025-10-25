@@ -1,17 +1,20 @@
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
-import { GlassButton, GlassCard } from "@/components/ui/glass-components";
-import { IconSymbol } from "@/components/ui/icon-symbol";
-import { Quote, useQuoteManager } from "@/hooks/use-quote-manager";
-import { useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   Alert,
-  Pressable,
   RefreshControl,
   ScrollView,
   Share,
   StyleSheet,
 } from "react-native";
+
+import { CategoryFilter } from "@/components/quotes/category-filter";
+import { QuoteItem } from "@/components/quotes/quote-item";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import type { Quote } from "@/hooks/use-quote-manager";
+import { useQuoteManager } from "@/hooks/use-quote-manager";
+
+type CategoryType = "all" | "focus" | "break" | "favorites";
 
 export default function QuotesScreen() {
   const {
@@ -25,11 +28,9 @@ export default function QuotesScreen() {
     getFavoriteQuotes,
   } = useQuoteManager();
 
-  const [selectedCategory, setSelectedCategory] = useState<
-    "all" | "focus" | "break" | "favorites"
-  >("all");
+  const [selectedCategory, setSelectedCategory] = useState<CategoryType>("all");
 
-  const getFilteredQuotes = () => {
+  const filteredQuotes = useMemo(() => {
     switch (selectedCategory) {
       case "focus":
         return getQuotesByCategory("focus");
@@ -40,23 +41,31 @@ export default function QuotesScreen() {
       default:
         return allQuotes;
     }
-  };
+  }, [selectedCategory, allQuotes, getQuotesByCategory, getFavoriteQuotes]);
 
-  const handleShare = async (quote: Quote) => {
-    try {
-      await Share.share({
-        message: shareQuote(quote),
-      });
-    } catch {
-      Alert.alert("Share Quote", shareQuote(quote));
-    }
-  };
+  const handleShare = useCallback(
+    async (quote: Quote) => {
+      try {
+        await Share.share({
+          message: shareQuote(quote),
+        });
+      } catch {
+        Alert.alert("Share Quote", shareQuote(quote));
+      }
+    },
+    [shareQuote]
+  );
 
-  const handleFavorite = (quoteId: string) => {
-    toggleFavorite(quoteId);
-  };
+  const handleFavorite = useCallback(
+    (quoteId: string) => {
+      toggleFavorite(quoteId);
+    },
+    [toggleFavorite]
+  );
 
-  const filteredQuotes = getFilteredQuotes();
+  const handleCategoryChange = useCallback((category: CategoryType) => {
+    setSelectedCategory(category);
+  }, []);
 
   return (
     <ThemedView style={styles.container}>
@@ -65,73 +74,10 @@ export default function QuotesScreen() {
           Quotes
         </ThemedText>
 
-        {/* Category Filter Buttons */}
-        <ThemedView style={styles.filterContainer}>
-          <Pressable
-            style={[
-              styles.filterButton,
-              selectedCategory === "all" && styles.activeFilter,
-            ]}
-            onPress={() => setSelectedCategory("all")}
-          >
-            <ThemedText
-              style={[
-                styles.filterText,
-                selectedCategory === "all" && styles.activeFilterText,
-              ]}
-            >
-              All
-            </ThemedText>
-          </Pressable>
-          <Pressable
-            style={[
-              styles.filterButton,
-              selectedCategory === "focus" && styles.activeFilter,
-            ]}
-            onPress={() => setSelectedCategory("focus")}
-          >
-            <ThemedText
-              style={[
-                styles.filterText,
-                selectedCategory === "focus" && styles.activeFilterText,
-              ]}
-            >
-              🎯 Focus
-            </ThemedText>
-          </Pressable>
-          <Pressable
-            style={[
-              styles.filterButton,
-              selectedCategory === "break" && styles.activeFilter,
-            ]}
-            onPress={() => setSelectedCategory("break")}
-          >
-            <ThemedText
-              style={[
-                styles.filterText,
-                selectedCategory === "break" && styles.activeFilterText,
-              ]}
-            >
-              ☕ Break
-            </ThemedText>
-          </Pressable>
-          <Pressable
-            style={[
-              styles.filterButton,
-              selectedCategory === "favorites" && styles.activeFilter,
-            ]}
-            onPress={() => setSelectedCategory("favorites")}
-          >
-            <ThemedText
-              style={[
-                styles.filterText,
-                selectedCategory === "favorites" && styles.activeFilterText,
-              ]}
-            >
-              ❤️ Favorites
-            </ThemedText>
-          </Pressable>
-        </ThemedView>
+        <CategoryFilter
+          selectedCategory={selectedCategory}
+          onCategoryChange={handleCategoryChange}
+        />
       </ThemedView>
 
       <ScrollView
@@ -142,38 +88,13 @@ export default function QuotesScreen() {
         }
       >
         {filteredQuotes.map((quote) => (
-          <GlassCard key={quote.id} style={styles.quoteCard}>
-            <ThemedView style={styles.quoteHeader}>
-              <ThemedText style={styles.categoryBadge}>
-                {quote.category === "focus" ? "🎯" : "☕"} {quote.category}
-              </ThemedText>
-              <Pressable onPress={() => handleFavorite(quote.id)}>
-                <ThemedText style={styles.favoriteIcon}>
-                  {isFavorite(quote.id) ? "❤️" : "🤍"}
-                </ThemedText>
-              </Pressable>
-            </ThemedView>
-
-            <ThemedText style={styles.quoteText}>
-              &ldquo;{quote.text}&rdquo;
-            </ThemedText>
-
-            <ThemedView style={styles.quoteFooter}>
-              <ThemedText style={styles.quoteAuthor}>
-                - {quote.author}
-              </ThemedText>
-              <Pressable
-                style={styles.shareButton}
-                onPress={() => handleShare(quote)}
-              >
-                <IconSymbol
-                  name="square.and.arrow.up"
-                  size={20}
-                  color="#007AFF"
-                />
-              </Pressable>
-            </ThemedView>
-          </GlassCard>
+          <QuoteItem
+            key={quote.id}
+            quote={quote}
+            isFavorite={isFavorite(quote.id)}
+            onToggleFavorite={handleFavorite}
+            onShare={handleShare}
+          />
         ))}
 
         {filteredQuotes.length === 0 && (
@@ -183,11 +104,6 @@ export default function QuotesScreen() {
                 ? "No favorite quotes yet"
                 : "No quotes available"}
             </ThemedText>
-            <GlassButton onPress={refreshQuotes} style={styles.refreshButton}>
-              <ThemedText style={styles.refreshButtonText}>
-                Refresh Quotes
-              </ThemedText>
-            </GlassButton>
           </ThemedView>
         )}
       </ScrollView>

@@ -9,6 +9,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import "react-native-reanimated";
 
+import { ErrorBoundary } from "@/components/error-boundary";
 import { TimerProvider } from "@/contexts/timer-context";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
@@ -41,17 +42,21 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <TimerProvider>
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="settings"
-            options={{ presentation: "modal", title: "Settings" }}
-          />
-        </Stack>
-        <StatusBar style="auto" />
-      </ThemeProvider>
-    </TimerProvider>
+    <ErrorBoundary>
+      <TimerProvider>
+        <ThemeProvider
+          value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+        >
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="settings"
+              options={{ presentation: "modal", title: "Settings" }}
+            />
+          </Stack>
+          <StatusBar style="auto" />
+        </ThemeProvider>
+      </TimerProvider>
+    </ErrorBoundary>
   );
 }

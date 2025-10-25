@@ -1,13 +1,16 @@
+import React, { useCallback } from "react";
+import { Alert, ScrollView, StyleSheet } from "react-native";
+
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { QuoteCard } from "@/components/timer/quote-card";
 import {
-  GlassButton,
-  GlassCard,
-  GlassTimerCircle,
-} from "@/components/ui/glass-components";
+  SessionSwitcher,
+  TimerControls,
+} from "@/components/timer/timer-controls";
+import { GlassTimerCircle } from "@/components/ui/glass-components";
 import { useQuoteManager } from "@/hooks/use-quote-manager";
 import { useTimerLogic } from "@/hooks/use-timer-logic";
-import { Animated, Pressable, ScrollView, StyleSheet } from "react-native";
 
 export default function TimerScreen() {
   const {
@@ -36,7 +39,7 @@ export default function TimerScreen() {
 
   const currentQuote = getCurrentQuoteBySession(currentSession);
 
-  const handleMainAction = () => {
+  const handleMainAction = useCallback(() => {
     if (isRunning) {
       pauseTimer();
     } else if (isPaused) {
@@ -44,7 +47,22 @@ export default function TimerScreen() {
     } else {
       startTimer();
     }
-  };
+  }, [isRunning, isPaused, pauseTimer, resumeTimer, startTimer]);
+
+  const handleReset = useCallback(() => {
+    Alert.alert("Reset Timer", "Are you sure you want to reset the timer?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Reset", style: "destructive", onPress: resetTimer },
+    ]);
+  }, [resetTimer]);
+
+  const handleShare = useCallback(
+    (quote: typeof currentQuote) => {
+      const message = shareQuote(quote);
+      Alert.alert("Share Quote", message);
+    },
+    [shareQuote]
+  );
 
   return (
     <ThemedView style={styles.container}>
@@ -70,117 +88,26 @@ export default function TimerScreen() {
           </GlassTimerCircle>
         </ThemedView>
 
-        <GlassCard style={styles.quoteContainer}>
-          <Animated.View style={{ opacity: fadeAnim }}>
-            <ThemedText style={styles.quote}>
-              &quot;{currentQuote.text}&quot;
-            </ThemedText>
-            <ThemedText style={styles.quoteAuthor}>
-              - {currentQuote.author}
-            </ThemedText>
-          </Animated.View>
+        <QuoteCard
+          quote={currentQuote}
+          fadeAnim={fadeAnim}
+          onRefresh={manuallyChangeQuote}
+          onToggleFavorite={toggleFavorite}
+          onShare={handleShare}
+          isFavorite={isFavorite(currentQuote.id)}
+        />
 
-          <ThemedView style={styles.quoteControls}>
-            <Pressable
-              style={styles.quoteControlButton}
-              onPress={manuallyChangeQuote}
-            >
-              <ThemedText style={styles.quoteControlIcon}>🔄</ThemedText>
-            </Pressable>
+        <TimerControls
+          isRunning={isRunning}
+          isPaused={isPaused}
+          onMainAction={handleMainAction}
+          onReset={handleReset}
+        />
 
-            <Pressable
-              style={styles.quoteControlButton}
-              onPress={() => toggleFavorite(currentQuote.id)}
-            >
-              <ThemedText style={styles.quoteControlIcon}>
-                {isFavorite(currentQuote.id) ? "❤️" : "🤍"}
-              </ThemedText>
-            </Pressable>
-
-            <Pressable
-              style={styles.quoteControlButton}
-              onPress={() => {
-                // In a real app, this would use Share API or copy to clipboard
-                console.log("Share:", shareQuote(currentQuote));
-              }}
-            >
-              <ThemedText style={styles.quoteControlIcon}>📤</ThemedText>
-            </Pressable>
-          </ThemedView>
-        </GlassCard>
-
-        <ThemedView style={styles.controlsContainer}>
-          <GlassButton
-            variant="primary"
-            style={styles.mainButton}
-            onPress={handleMainAction}
-          >
-            <ThemedText style={styles.buttonText}>
-              {isRunning ? "Pause" : isPaused ? "Resume" : "Start"}
-            </ThemedText>
-          </GlassButton>
-
-          <GlassButton
-            variant="secondary"
-            style={styles.secondaryButton}
-            onPress={resetTimer}
-          >
-            <ThemedText style={styles.buttonText}>Reset</ThemedText>
-          </GlassButton>
-        </ThemedView>
-
-        {/* Session Switch Buttons */}
-        <ThemedView style={styles.sessionSwitchContainer}>
-          <Pressable
-            style={[
-              styles.sessionButton,
-              currentSession === "focus" && styles.activeSessionButton,
-            ]}
-            onPress={() => switchSession("focus")}
-          >
-            <ThemedText
-              style={[
-                styles.sessionButtonText,
-                currentSession === "focus" && styles.activeSessionButtonText,
-              ]}
-            >
-              Focus
-            </ThemedText>
-          </Pressable>
-          <Pressable
-            style={[
-              styles.sessionButton,
-              currentSession === "break" && styles.activeSessionButton,
-            ]}
-            onPress={() => switchSession("break")}
-          >
-            <ThemedText
-              style={[
-                styles.sessionButtonText,
-                currentSession === "break" && styles.activeSessionButtonText,
-              ]}
-            >
-              Break
-            </ThemedText>
-          </Pressable>
-          <Pressable
-            style={[
-              styles.sessionButton,
-              currentSession === "longBreak" && styles.activeSessionButton,
-            ]}
-            onPress={() => switchSession("longBreak")}
-          >
-            <ThemedText
-              style={[
-                styles.sessionButtonText,
-                currentSession === "longBreak" &&
-                  styles.activeSessionButtonText,
-              ]}
-            >
-              Long Break
-            </ThemedText>
-          </Pressable>
-        </ThemedView>
+        <SessionSwitcher
+          currentSession={currentSession}
+          onSwitchSession={switchSession}
+        />
       </ScrollView>
     </ThemedView>
   );

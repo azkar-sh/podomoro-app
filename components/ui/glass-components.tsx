@@ -67,6 +67,8 @@ interface GlassButtonProps {
   intensity?: number;
   disabled?: boolean;
   variant?: "primary" | "secondary" | "destructive";
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
 }
 
 export function GlassButton({
@@ -76,6 +78,8 @@ export function GlassButton({
   intensity = 25,
   disabled = false,
   variant = "primary",
+  accessibilityLabel,
+  accessibilityHint,
 }: GlassButtonProps) {
   const colorScheme = useColorScheme();
 
