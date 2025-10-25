@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "FocusTimer",
-    "slug": "focus-timer-app",
+    "slug": "podomoro-quotes-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -12,7 +12,10 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.focustimer.app",
       "infoPlist": {
-        "UIBackgroundModes": ["background-fetch", "background-processing"],
+        "UIBackgroundModes": [
+          "background-fetch",
+          "background-processing"
+        ],
         "BGTaskSchedulerPermittedIdentifiers": [
           "com.focustimer.background-timer"
         ]
@@ -67,12 +70,23 @@
           "microphonePermission": false
         }
       ],
-      ["expo-task-manager"],
-      ["expo-background-fetch"]
+      [
+        "expo-task-manager"
+      ],
+      [
+        "expo-background-fetch"
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8f106bfa-4b5d-4dad-8e55-380c763392ce"
+      }
+    },
+    "owner": "azkarsh"
   }
 }
