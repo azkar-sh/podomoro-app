@@ -99,7 +99,12 @@ export function useQuoteManager() {
   const [lastUpdate, setLastUpdate] = useState<number>(0);
 
   const fadeAnim = useRef(new Animated.Value(1)).current;
-  const quoteChangeInterval = useRef<NodeJS.Timeout | null>(null);
+  const quoteChangeInterval = useRef<ReturnType<typeof setInterval> | null>(
+    null,
+  );
+  const categoryQuoteCache = useRef<Partial<Record<"focus" | "break", Quote>>>(
+    {},
+  );
 
   // Load cached data on mount
   useEffect(() => {
@@ -174,7 +179,7 @@ export function useQuoteManager() {
         // Cache the API quotes (not fallback ones)
         await AsyncStorage.setItem(
           QUOTES_CACHE_KEY,
-          JSON.stringify(processedQuotes)
+          JSON.stringify(processedQuotes),
         );
         await AsyncStorage.setItem(LAST_UPDATE_KEY, Date.now().toString());
         setLastUpdate(Date.now());
@@ -189,9 +194,12 @@ export function useQuoteManager() {
 
   const startQuoteRotation = () => {
     // Change quote every 5 minutes (300,000 ms)
-    quoteChangeInterval.current = setInterval(() => {
-      changeQuoteWithAnimation();
-    }, 5 * 60 * 1000);
+    quoteChangeInterval.current = setInterval(
+      () => {
+        changeQuoteWithAnimation();
+      },
+      5 * 60 * 1000,
+    );
   };
 
   const changeQuoteWithAnimation = () => {
@@ -223,20 +231,27 @@ export function useQuoteManager() {
   };
 
   const getCurrentQuoteBySession = (
-    sessionType: "focus" | "break" | "longBreak"
+    sessionType: "focus" | "break" | "longBreak",
   ): Quote => {
     const category = sessionType === "focus" ? "focus" : "break";
     const categoryQuotes = getQuotesByCategory(category);
 
     if (currentQuote.category === category) {
+      categoryQuoteCache.current[category] = currentQuote;
       return currentQuote;
     }
 
-    // Return a random quote from the appropriate category
-    return (
-      categoryQuotes[Math.floor(Math.random() * categoryQuotes.length)] ||
-      currentQuote
-    );
+    const cachedQuote = categoryQuoteCache.current[category];
+    if (
+      cachedQuote &&
+      categoryQuotes.some((quote) => quote.id === cachedQuote.id)
+    ) {
+      return cachedQuote;
+    }
+
+    const fallbackCategoryQuote = categoryQuotes[0] || currentQuote;
+    categoryQuoteCache.current[category] = fallbackCategoryQuote;
+    return fallbackCategoryQuote;
   };
 
   const toggleFavorite = async (quoteId: string) => {

@@ -1,4 +1,6 @@
+import { SessionColors } from "@/constants/theme";
 import { useTimer } from "@/contexts/timer-context";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useStatistics } from "@/hooks/use-statistics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Audio } from "expo-av";
@@ -54,7 +56,8 @@ TaskManager.defineTask(BACKGROUND_TIMER_TASK, async ({ data, error }) => {
 export function useTimerLogic() {
   const { state, dispatch, formatTime, saveState } = useTimer();
   const { recordSessionStart, recordSessionComplete } = useStatistics();
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const colorScheme = useColorScheme() ?? "light";
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
   const appState = useRef(AppState.currentState);
   const backgroundTimeRef = useRef<number>(Date.now());
@@ -64,7 +67,7 @@ export function useTimerLogic() {
     const loadSound = async () => {
       try {
         const { sound } = await Audio.Sound.createAsync(
-          require("@/assets/sounds/ding.mp3") // We'll need to add this sound file
+          require("@/assets/sounds/ding.mp3"), // We'll need to add this sound file
         );
         soundRef.current = sound;
       } catch (error) {
@@ -127,8 +130,8 @@ export function useTimerLogic() {
         state.currentSession === "focus"
           ? "Focus"
           : state.currentSession === "break"
-          ? "Break"
-          : "Long Break";
+            ? "Break"
+            : "Long Break";
 
       const nextSessionText =
         state.currentSession === "focus" ? "Break time!" : "Focus time!";
@@ -168,11 +171,11 @@ export function useTimerLogic() {
         // App came to foreground
         if (state.isRunning) {
           const timeInBackground = Math.floor(
-            (Date.now() - backgroundTimeRef.current) / 1000
+            (Date.now() - backgroundTimeRef.current) / 1000,
           );
           const newRemainingTime = Math.max(
             0,
-            state.remainingTime - timeInBackground
+            state.remainingTime - timeInBackground,
           );
 
           if (newRemainingTime === 0) {
@@ -197,7 +200,7 @@ export function useTimerLogic() {
           JSON.stringify({
             ...state,
             backgroundTime: backgroundTimeRef.current,
-          })
+          }),
         ).catch((storageError) => {
           console.warn("Could not save background state:", storageError);
         });
@@ -207,7 +210,7 @@ export function useTimerLogic() {
     };
     const subscription = AppState.addEventListener(
       "change",
-      handleAppStateChange
+      handleAppStateChange,
     );
     return () => subscription?.remove();
   }, [state, dispatch, handleTimerComplete, scheduleNotification]);
@@ -300,8 +303,8 @@ export function useTimerLogic() {
       state.currentSession === "focus"
         ? state.focusDuration * 60
         : state.currentSession === "break"
-        ? state.breakDuration * 60
-        : state.longBreakDuration * 60;
+          ? state.breakDuration * 60
+          : state.longBreakDuration * 60;
 
     // Return remaining time as progress (full ring = full time remaining)
     return state.remainingTime / totalDuration;
@@ -323,16 +326,7 @@ export function useTimerLogic() {
 
   // Session color
   const getSessionColor = (): string => {
-    switch (state.currentSession) {
-      case "focus":
-        return "#007AFF";
-      case "break":
-        return "#34C759";
-      case "longBreak":
-        return "#FF9500";
-      default:
-        return "#007AFF";
-    }
+    return SessionColors[state.currentSession][colorScheme];
   };
 
   return {

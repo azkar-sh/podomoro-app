@@ -87,7 +87,7 @@ export const SessionSwitcher = memo<SessionSwitcherProps>(
         ))}
       </ThemedView>
     );
-  }
+  },
 );
 
 const styles = StyleSheet.create({
@@ -108,6 +108,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 16,
     fontWeight: "600",
+    color: "white",
   },
   sessionContainer: {
     flexDirection: "row",

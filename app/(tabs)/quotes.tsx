@@ -53,14 +53,14 @@ export default function QuotesScreen() {
         Alert.alert("Share Quote", shareQuote(quote));
       }
     },
-    [shareQuote]
+    [shareQuote],
   );
 
   const handleFavorite = useCallback(
     (quoteId: string) => {
       toggleFavorite(quoteId);
     },
-    [toggleFavorite]
+    [toggleFavorite],
   );
 
   const handleCategoryChange = useCallback((category: CategoryType) => {
@@ -124,6 +124,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: "bold",
+    marginBottom: 16,
   },
   scrollView: {
     flex: 1,

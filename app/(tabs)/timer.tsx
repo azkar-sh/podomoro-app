@@ -61,7 +61,7 @@ export default function TimerScreen() {
       const message = shareQuote(quote);
       Alert.alert("Share Quote", message);
     },
-    [shareQuote]
+    [shareQuote],
   );
 
   return (
@@ -78,7 +78,7 @@ export default function TimerScreen() {
         </ThemedView>
 
         <ThemedView style={styles.timerContainer}>
-          <GlassTimerCircle size={280} progress={progress} color={sessionColor}>
+          <GlassTimerCircle size={240} progress={progress} color={sessionColor}>
             <ThemedText type="title" style={styles.timerText}>
               {formattedTime}
             </ThemedText>
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   timerText: {
-    fontSize: 48,
+    fontSize: 40,
     fontWeight: "bold",
   },
   sessionType: {
